@@ -1,36 +1,35 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
-type Tree = { id: string; slug: string; name: string }
+export default function LoginPage(){
+  const [email, setEmail] = useState('')
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-export default function AppHome(){
-  const [trees, setTrees] = useState<Tree[]>([])
-  useEffect(()=>{ (async()=>{
-    const { data, error } = await supabase.from('trees').select('id,slug,name').limit(20)
-    if(!error) setTrees(data || [])
-  })() },[])
+  async function handleLogin(e: React.FormEvent){
+    e.preventDefault()
+    setError(null)
+    const { error } = await supabase.auth.signInWithOtp({ email })
+    if(error){ setError(error.message); return }
+    setSent(true)
+  }
 
   return (
-    <main className="space-y-4">
-      <h1 className="text-2xl font-semibold">Mes arbres</h1>
-      <ul className="space-y-2">
-        {trees.map(t=> (
-          <li key={t.id} className="bg-[color:var(--card)] border rounded-2xl p-4">
-            <a href={`/app/tree/${t.slug}`} className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">{t.name}</div>
-                <div className="text-sm text-gray-500">/{t.slug}</div>
-              </div>
-              <span className="text-[color:var(--primary)]">Ouvrir →</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-      <a className="inline-block bg-[color:var(--primary)] text-white px-4 py-2 rounded-xl hover:opacity-90"
-         href="/app/new-tree">
-        Créer un arbre
-      </a>
+    <main className="max-w-sm mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Connexion</h1>
+      {sent ? (
+        <p>Mail envoyé. Ouvre le lien de connexion, puis reviens ici.</p>
+      ) : (
+        <form onSubmit={handleLogin} className="space-y-3">
+          <input className="border p-2 w-full" type="email" placeholder="Email"
+                 value={email} onChange={e=>setEmail(e.target.value)} required />
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <button className="bg-black text-white px-4 py-2 rounded" type="submit">
+            Recevoir le lien
+          </button>
+        </form>
+      )}
     </main>
   )
 }
